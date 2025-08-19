@@ -1,0 +1,31 @@
+{
+  "name": "test1",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "shashank",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.5.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "cors": "^2.8.5",
+    "datatables.net": "^2.1.8",
+    "date-fns": "^4.1.0",
+    "express": "^4.21.1",
+    "express-session": "^1.18.2",
+    "fs": "^0.0.1-security",
+    "jquery": "^3.7.1",
+    "mysql2": "^3.11.3",
+    "nodemon": "^3.1.7",
+    "socket.io": "^4.7.5",
+    "xlsx": "^0.18.5"
+  }
+}

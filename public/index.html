@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Material Management Group</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class'
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex items-center justify-center transition-colors duration-300">
+    <div
+      id="login-container"
+      class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full"
+    >
+      <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-gray-100 mb-6">
+        Login
+      </h2>
+      <form id="login-form" class="space-y-4">
+        <input
+          type="text"
+          id="username"
+          placeholder="Username"
+          required
+          class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          required
+          class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition"
+        >
+          Login
+        </button>
+      </form>
+      <div class="mt-4 text-center">
+        <button
+          id="change-password-btn"
+          type="button"
+          class="text-blue-600 hover:underline text-sm"
+        >
+          Change Password
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="change-password-container"
+      class="hidden bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full"
+    >
+      <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-gray-100 mb-6">
+        Change Password
+      </h2>
+      <div id="security-question-form" class="space-y-4">
+        <p class="text-gray-700 text-center mb-4">
+          Security Question: Who is omnipotent?
+        </p>
+        <input
+          type="text"
+          id="security-answer"
+          placeholder="Enter your answer"
+          required
+          class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          id="verify-answer-btn"
+          type="button"
+          class="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition"
+        >
+          Verify Answer
+        </button>
+      </div>
+      <div id="new-password-form" class="hidden space-y-4">
+        <p class="text-green-600 text-center mb-4">
+          Security question verified! Enter your new password:
+        </p>
+        <input
+          type="password"
+          id="new-password"
+          placeholder="New Password"
+          required
+          class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="password"
+          id="confirm-password"
+          placeholder="Confirm New Password"
+          required
+          class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          id="update-password-btn"
+          type="button"
+          class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition"
+        >
+          Update Password
+        </button>
+      </div>
+      <div class="mt-4 text-center">
+        <button
+          id="back-to-login-btn"
+          type="button"
+          class="text-gray-600 hover:underline text-sm"
+        >
+          Back to Login
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="dashboard"
+      class="hidden max-w-full mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg grid grid-cols-1 gap-6"
+    >
+      <header class="flex justify-center items-center relative">
+        <div class="flex items-center gap-4">
+          <img src="/logo-bg.png" alt="DRDO Logo" class="w-16 h-16 object-contain">
+          <h1 class="text-3xl font-bold text-blue-800">
+            Material Management Group
+          </h1>
+        </div>
+        <div class="absolute right-0 flex gap-2">
+          <button
+            id="dark-mode-toggle"
+            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+            title="Toggle Dark Mode"
+            style="display: none;"
+          >
+            🌙
+          </button>
+          <button
+            onclick="showKeyboardShortcutsHelp()"
+            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+            title="Keyboard Shortcuts (Ctrl+?)"
+          >
+            ⌨️
+          </button>
+          <button
+            id="dashboard-btn"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            📊 Dashboard
+          </button>
+          <button
+            id="logout"
+            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+      <div id="alert-container" class="mb-0"></div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div
+          id="demand-register-btn"
+          class="block bg-gray-200 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-300 transition"
+        >
+          Demand Control Register
+        </div>
+        <div
+          id="supply-register-btn"
+          class="block bg-blue-600 text-white p-4 rounded-lg text-center cursor-pointer"
+        >
+          Supply Order Register
+        </div>
+        <div
+          id="bill-register-btn"
+          class="block bg-gray-200 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-300 transition"
+        >
+          Bill Control Register
+        </div>
+        <div
+          id="sanction-register-btn"
+          class="block bg-gray-200 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-300 transition"
+        >
+          Sanction Code Register
+        </div>
+      </div>
+      <div id="supply-register" class="grid grid-cols-1 gap-4">
+        <div
+          class="controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4"
+        >
+          <select
+            id="financial-year"
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></select>
+          <input
+            type="text"
+            id="search"
+            placeholder="Search..."
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onclick="toggleAdvancedFilter('supply')"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Advanced Filter
+          </button>
+          <select
+            id="sort"
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="serial_no">Serial No</option>
+            <option value="supply_order_no_date">Supply Order No & Date</option>
+            <option value="firm_name">Firm Name</option>
+            <option value="nomenclature">Nomenclature</option>
+            <option value="quantity">Quantity</option>
+            <option value="original_date">Original Date</option>
+            <option value="revised_date1">Revised Date 1</option>
+            <option value="revised_date2">Revised Date 2</option>
+            <option value="revised_date3">Revised Date 3</option>
+            <option value="build_up">Build Up</option>
+            <option value="maint">Maintenance</option>
+            <option value="misc">Miscellaneous</option>
+            <option value="project_no_pdc">Project No & PDC</option>
+            <option value="actual_delivery_date">Actual Delivery Date</option>
+            <option value="procurement_mode">Procurement Mode</option>
+            <option value="delivery_done">Delivery Done</option>
+            <option value="remarks">Remarks</option>
+          </select>
+          <button
+            onclick="addRow('supply')"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Add Row
+          </button>
+          <button
+            onclick="exportToExcel('supply')"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Export to Excel
+          </button>
+          <button
+            onclick="document.getElementById('import-excel-supply').click()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Import Excel
+          </button>
+          <input
+            type="file"
+            id="import-excel-supply"
+            accept=".xlsx,.xls"
+            class="hidden"
+          />
+          <button
+            onclick="showBackups('supply')"
+            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+          >
+            View Backups
+          </button>
+        </div>
+        <div
+          id="supply-advanced-filter"
+          class="hidden bg-gray-50 p-4 rounded-lg"
+        >
+          <h3 class="text-lg font-semibold mb-2">Advanced Filter</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <select
+              name="serial_no"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Serial No</option>
+            </select>
+            <select
+              name="supply_order_no_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Supply Order No & Date</option>
+            </select>
+            <select
+              name="firm_name"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Firm Name</option>
+            </select>
+            <select
+              name="nomenclature"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Nomenclature</option>
+            </select>
+            <select
+              name="quantity"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Quantity</option>
+            </select>
+            <select
+              name="original_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Original Date</option>
+            </select>
+            <select
+              name="revised_date1"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Revised Date 1</option>
+            </select>
+            <select
+              name="revised_date2"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Revised Date 2</option>
+            </select>
+            <select
+              name="revised_date3"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Revised Date 3</option>
+            </select>
+            <select
+              name="build_up"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Build Up</option>
+            </select>
+            <select
+              name="maint"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Maintenance</option>
+            </select>
+            <select
+              name="misc"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Miscellaneous</option>
+            </select>
+            <select
+              name="project_no_pdc"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Project No & PDC</option>
+            </select>
+            <select
+              name="actual_delivery_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Actual Delivery Date</option>
+            </select>
+            <select
+              name="procurement_mode"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Procurement Mode</option>
+            </select>
+            <select
+              name="delivery_done"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Delivery Done</option>
+            </select>
+            <select
+              name="remarks"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Remarks</option>
+            </select>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                onclick="applyFilter('supply')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Apply Filter
+              </button>
+              <button
+                type="button"
+                onclick="resetFilter('supply')"
+                class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="supply-backup-list" class="hidden bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">Backup Files</h3>
+          <ul id="supply-backup-files" class="space-y-2"></ul>
+        </div>
+        <div class="overflow-x-auto">
+          <table id="supply-table" class="w-full border-collapse table-auto">
+            <thead>
+              <tr class="bg-blue-600 text-white">
+                <th class="p-3" rowspan="2">Serial No</th>
+                <th class="p-3" rowspan="2">Supply Order No & Date</th>
+                <th class="p-3" rowspan="2">Firm Name</th>
+                <th class="p-3" rowspan="2">Nomenclature</th>
+                <th class="p-3" rowspan="2">Quantity</th>
+                <th class="p-3" colspan="4">Delivery Period</th>
+                <th class="p-3" colspan="4">Supply Order Value</th>
+                <th class="p-3" rowspan="2">P/NP</th>
+                <th class="p-3" rowspan="2">Expenditure Head</th>
+                <th class="p-3" rowspan="2">Rev/Cap</th>
+                <th class="p-3" rowspan="2">Actual Delivery Date</th>
+                <th class="p-3" rowspan="2">Procurement Mode</th>
+                <th class="p-3" rowspan="2">Delivery Done</th>
+                <th class="p-3" rowspan="2">Remarks</th>
+                <th class="p-3" rowspan="2">Actions</th>
+                <th class="p-3" rowspan="2">Arrange</th>
+              </tr>
+              <tr class="bg-blue-600 text-white">
+                <th class="p-3">Original Date</th>
+                <th class="p-3">Revised Date 1</th>
+                <th class="p-3">Revised Date 2</th>
+                <th class="p-3">Revised Date 3</th>
+                <th class="p-3">Build Up</th>
+                <th class="p-3">Maintenance</th>
+                <th class="p-3">Miscellaneous</th>
+                <th class="p-3">Project No & PDC</th>
+              </tr>
+            </thead>
+            <tbody id="supply-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="demand-register" class="hidden grid grid-cols-1 gap-4">
+        <div
+          class="controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4"
+        >
+          <select
+            id="demand-financial-year"
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></select>
+          <input
+            type="text"
+            id="demand-search"
+            placeholder="Search..."
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onclick="toggleAdvancedFilter('demand')"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Advanced Filter
+          </button>
+          <select
+            id="demand-sort"
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="serial_no">Serial No</option>
+            <option value="demand_date">Demand Date</option>
+            <option value="group_demand_no_date">
+              Group Demand No. & Date
+            </option>
+            <option value="mmg_control_no_date">MMG Control No. & Date</option>
+            <option value="nomenclature">Nomenclature</option>
+            <option value="quantity">Quantity</option>
+            <option value="expenditure_head">Expenditure Head</option>
+            <option value="rev_cap">Rev/Cap</option>
+            <option value="procurement_mode">Mode of Procurement</option>
+            <option value="est_cost">Est. Cost</option>
+            <option value="imms_control_no">IMMS Control No.</option>
+            <option value="remarks">Remarks</option>
+          </select>
+          <button
+            onclick="addRow('demand')"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Add Row
+          </button>
+          <button
+            onclick="exportToExcel('demand')"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Export to Excel
+          </button>
+          <button
+            onclick="document.getElementById('import-excel-demand').click()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Import Excel
+          </button>
+          <input
+            type="file"
+            id="import-excel-demand"
+            accept=".xlsx,.xls"
+            class="hidden"
+          />
+          <button
+            onclick="showBackups('demand')"
+            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+          >
+            View Backups
+          </button>
+        </div>
+        <div
+          id="demand-advanced-filter"
+          class="hidden bg-gray-50 p-4 rounded-lg"
+        >
+          <h3 class="text-lg font-semibold mb-2">Advanced Filter</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <select
+              name="serial_no"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Serial No</option>
+            </select>
+            <select
+              name="demand_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Demand Date</option>
+            </select>
+            <select
+              name="group_demand_no_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Group Demand No. & Date</option>
+            </select>
+            <select
+              name="mmg_control_no_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select MMG Control No. & Date</option>
+            </select>
+            <select
+              name="nomenclature"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Nomenclature</option>
+            </select>
+            <select
+              name="quantity"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Quantity</option>
+            </select>
+            <select
+              name="expenditure_head"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Expenditure Head</option>
+            </select>
+            <select
+              name="rev_cap"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Rev/Cap</option>
+            </select>
+            <select
+              name="procurement_mode"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Mode of Procurement</option>
+            </select>
+            <select
+              name="est_cost"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Est. Cost</option>
+            </select>
+            <select
+              name="imms_control_no"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select IMMS Control No.</option>
+            </select>
+            <select
+              name="remarks"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Remarks</option>
+            </select>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                onclick="applyFilter('demand')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Apply Filter
+              </button>
+              <button
+                type="button"
+                onclick="resetFilter('demand')"
+                class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="demand-backup-list" class="hidden bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">Backup Files</h3>
+          <ul id="demand-backup-files" class="space-y-2"></ul>
+        </div>
+        <div class="overflow-x-auto">
+          <table id="demand-table" class="w-full border-collapse table-auto">
+            <thead>
+              <tr class="bg-blue-600 text-white">
+                <th class="p-3">Serial No</th>
+                <th class="p-3">Group Demand No.</th>
+                <th class="p-3">Demand Date</th>
+                <th class="p-3">MMG Control No.</th>
+                <th class="p-3">Control Date</th>
+                <th class="p-3">Nomenclature</th>
+                <th class="p-3">Quantity</th>
+                <th class="p-3">Expenditure Head</th>
+                <th class="p-3">Code Head</th>
+                <th class="p-3">Rev/Cap</th>
+                <th class="p-3">Mode of Procurement</th>
+                <th class="p-3">Est. Cost</th>
+                <th class="p-3">IMMS Control No.</th>
+                <th class="p-3">Remarks</th>
+                <th class="p-3">Actions</th>
+                <th class="p-3">Arrange</th>
+              </tr>
+            </thead>
+            <tbody id="demand-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="bill-register" class="hidden grid grid-cols-1 gap-4">
+        <div
+          class="controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4"
+        >
+          <select
+            id="bill-financial-year"
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></select>
+          <input
+            type="text"
+            id="bill-search"
+            placeholder="Search..."
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onclick="toggleAdvancedFilter('bill')"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Advanced Filter
+          </button>
+          <select
+            id="bill-sort"
+            class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="serial_no">Serial No</option>
+            <option value="entry_date">Entry Date</option>
+            <option value="firm_name">Firm Name</option>
+            <option value="supply_order_no">Supply Order No</option>
+            <option value="so_date">SO Date</option>
+            <option value="project_no">Project No</option>
+            <option value="build_up">Build Up</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="project_less_2cr">Project Less than 2 Crore</option>
+            <option value="project_more_2cr">Project More than 2 Crore</option>
+            <option value="procurement_mode">Mode of Procurement</option>
+            <option value="rev_cap">Rev/Cap</option>
+            <option value="date_amount_passed">Date and Amount Passed</option>
+            <option value="ld_amount">LD Amount</option>
+            <option value="remarks">Remarks</option>
+          </select>
+          <button
+            onclick="addRow('bill')"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Add Row
+          </button>
+          <button
+            onclick="exportToExcel('bill')"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Export to Excel
+          </button>
+          <button
+            onclick="document.getElementById('import-excel-bill').click()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Import Excel
+          </button>
+          <input
+            type="file"
+            id="import-excel-bill"
+            accept=".xlsx,.xls"
+            class="hidden"
+          />
+          <button
+            onclick="showBackups('bill')"
+            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+          >
+            View Backups
+          </button>
+        </div>
+        <div id="bill-advanced-filter" class="hidden bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">Advanced Filter</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <select
+              name="serial_no"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Serial No</option>
+            </select>
+            <select
+              name="entry_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Entry Date</option>
+            </select>
+            <select
+              name="firm_name"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Firm Name</option>
+            </select>
+            <select
+              name="supply_order_no"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Supply Order No</option>
+            </select>
+            <select
+              name="so_date"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select SO Date</option>
+            </select>
+            <select
+              name="project_no"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Project No</option>
+            </select>
+            <select
+              name="build_up"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Build Up</option>
+            </select>
+            <select
+              name="maintenance"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Maintenance</option>
+            </select>
+            <select
+              name="project_less_2cr"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Project Less than 2 Crore</option>
+            </select>
+            <select
+              name="project_more_2cr"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Project More than 2 Crore</option>
+            </select>
+            <select
+              name="procurement_mode"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Mode of Procurement</option>
+            </select>
+            <select
+              name="rev_cap"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Rev/Cap</option>
+            </select>
+            <select
+              name="date_amount_passed"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Date and Amount Passed</option>
+            </select>
+            <select
+              name="ld_amount"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select LD Amount</option>
+            </select>
+            <select
+              name="remarks"
+              class="filter-select p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Remarks</option>
+            </select>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                onclick="applyFilter('bill')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Apply Filter
+              </button>
+              <button
+                type="button"
+                onclick="resetFilter('bill')"
+                class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="bill-backup-list" class="hidden bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">Backup Files</h3>
+          <ul id="bill-backup-files" class="space-y-2"></ul>
+        </div>
+        <div class="overflow-x-auto">
+          <table id="bill-table" class="w-full border-collapse table-auto">
+            <thead>
+              <tr class="bg-blue-600 text-white">
+                <th class="p-3" rowspan="2">Serial No</th>
+                <th class="p-3" rowspan="2">Bill Control Date</th>
+                <th class="p-3" rowspan="2">Firm Name</th>
+                <th class="p-3" rowspan="2">Supply Order No</th>
+                <th class="p-3" rowspan="2">SO Date</th>
+                <th class="p-3" rowspan="2">Project No</th>
+                <th class="p-3" colspan="4">Price</th>
+                <th class="p-3" rowspan="2">Mode of Procurement</th>
+                <th class="p-3" rowspan="2">Rev/Cap</th>
+                <th class="p-3" rowspan="2">Date and Amount Passed</th>
+                <th class="p-3" rowspan="2">LD Amount</th>
+                <th class="p-3" rowspan="2">Remarks</th>
+                <th class="p-3" rowspan="2">Actions</th>
+                <th class="p-3" rowspan="2">Arrange</th>
+              </tr>
+              <tr class="bg-blue-600 text-white">
+                <th class="p-3">Build Up</th>
+                <th class="p-3">Maintenance</th>
+                <th class="p-3">Project Less than 2 Crore</th>
+                <th class="p-3">Project More than 2 Crore</th>
+              </tr>
+            </thead>
+            <tbody id="bill-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="sanction-register" class="hidden grid grid-cols-1 gap-4">
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Sanction Code Register</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div
+              id="gen-project-btn"
+              class="block bg-blue-600 text-white p-4 rounded-lg text-center cursor-pointer"
+            >
+              Gen & Project
+            </div>
+            <div
+              id="misc-btn"
+              class="block bg-gray-200 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-300 transition"
+            >
+              Misc.
+            </div>
+            <div
+              id="training-btn"
+              class="block bg-gray-200 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-300 transition"
+            >
+              Training
+            </div>
+          </div>
+
+          <div id="gen-project-section" class="sanction-section">
+            <div class="controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
+              <select
+                id="gen-project-financial-year"
+                class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              ></select>
+              <input
+                type="text"
+                id="gen-project-search"
+                placeholder="Search..."
+                class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onclick="addSanctionRow('gen-project')"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+              >
+                Add Row
+              </button>
+              <button
+                onclick="exportSanctionToExcel('gen-project')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Export to Excel
+              </button>
+              <button
+                onclick="document.getElementById('import-excel-gen-project').click()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Import Excel
+              </button>
+              <input
+                type="file"
+                id="import-excel-gen-project"
+                accept=".xlsx,.xls"
+                class="hidden"
+              />
+              <button
+                onclick="showSanctionBackups('gen-project')"
+                class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+              >
+                View Backups
+              </button>
+            </div>
+            <div id="gen-project-backup-list" class="hidden bg-gray-50 p-4 rounded-lg mb-4">
+              <h3 class="text-lg font-semibold mb-2">Backup Files</h3>
+              <ul id="gen-project-backup-files" class="space-y-2"></ul>
+            </div>
+            <div class="overflow-x-auto">
+              <table id="gen-project-table" class="w-full border-collapse table-auto">
+                <thead>
+                  <tr class="bg-blue-600 text-white">
+                    <th class="p-3">S.No</th>
+                    <th class="p-3">Date</th>
+                    <th class="p-3">File No.</th>
+                    <th class="p-3">Sanction Code</th>
+                    <th class="p-3">Code</th>
+                    <th class="p-3">NP(B)/Proj.</th>
+                    <th class="p-3">Power</th>
+                    <th class="p-3">Code Head</th>
+                    <th class="p-3">Rev/Cap</th>
+                    <th class="p-3">Amount</th>
+                    <th class="p-3">U.O. No.</th>
+                    <th class="p-3">U.O. Date</th>
+                    <th class="p-3">Amendment(if any)</th>
+                    <th class="p-3">Actions</th>
+                    <th class="p-3">Arrange</th>
+                  </tr>
+                </thead>
+                <tbody id="gen-project-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="misc-section" class="sanction-section hidden">
+            <div class="controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
+              <select
+                id="misc-financial-year"
+                class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              ></select>
+              <input
+                type="text"
+                id="misc-search"
+                placeholder="Search..."
+                class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onclick="addSanctionRow('misc')"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+              >
+                Add Row
+              </button>
+              <button
+                onclick="exportSanctionToExcel('misc')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Export to Excel
+              </button>
+              <button
+                onclick="document.getElementById('import-excel-misc').click()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Import Excel
+              </button>
+              <input
+                type="file"
+                id="import-excel-misc"
+                accept=".xlsx,.xls"
+                class="hidden"
+              />
+              <button
+                onclick="showSanctionBackups('misc')"
+                class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+              >
+                View Backups
+              </button>
+            </div>
+            <div id="misc-backup-list" class="hidden bg-gray-50 p-4 rounded-lg mb-4">
+              <h3 class="text-lg font-semibold mb-2">Backup Files</h3>
+              <ul id="misc-backup-files" class="space-y-2"></ul>
+            </div>
+            <div class="overflow-x-auto">
+              <table id="misc-table" class="w-full border-collapse table-auto">
+                <thead>
+                  <tr class="bg-blue-600 text-white">
+                    <th class="p-3">S.No</th>
+                    <th class="p-3">Date</th>
+                    <th class="p-3">File No.</th>
+                    <th class="p-3">Sanction Code</th>
+                    <th class="p-3">Code</th>
+                    <th class="p-3">NP(B)/Proj.</th>
+                    <th class="p-3">Power</th>
+                    <th class="p-3">Code Head</th>
+                    <th class="p-3">Rev/Cap</th>
+                    <th class="p-3">Amount</th>
+                    <th class="p-3">U.O. No.</th>
+                    <th class="p-3">U.O. Date</th>
+                    <th class="p-3">Amendment(if any)</th>
+                    <th class="p-3">Actions</th>
+                    <th class="p-3">Arrange</th>
+                  </tr>
+                </thead>
+                <tbody id="misc-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="training-section" class="sanction-section hidden">
+            <div class="controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
+              <select
+                id="training-financial-year"
+                class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              ></select>
+              <input
+                type="text"
+                id="training-search"
+                placeholder="Search..."
+                class="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onclick="addSanctionRow('training')"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+              >
+                Add Row
+              </button>
+              <button
+                onclick="exportSanctionToExcel('training')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Export to Excel
+              </button>
+              <button
+                onclick="document.getElementById('import-excel-training').click()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Import Excel
+              </button>
+              <input
+                type="file"
+                id="import-excel-training"
+                accept=".xlsx,.xls"
+                class="hidden"
+              />
+              <button
+                onclick="showSanctionBackups('training')"
+                class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+              >
+                View Backups
+              </button>
+            </div>
+            <div id="training-backup-list" class="hidden bg-gray-50 p-4 rounded-lg mb-4">
+              <h3 class="text-lg font-semibold mb-2">Backup Files</h3>
+              <ul id="training-backup-files" class="space-y-2"></ul>
+            </div>
+            <div class="overflow-x-auto">
+              <table id="training-table" class="w-full border-collapse table-auto">
+                <thead>
+                  <tr class="bg-blue-600 text-white">
+                    <th class="p-3">S.No</th>
+                    <th class="p-3">Date</th>
+                    <th class="p-3">File No.</th>
+                    <th class="p-3">Sanction Code</th>
+                    <th class="p-3">Code</th>
+                    <th class="p-3">NP(B)/Proj.</th>
+                    <th class="p-3">Power</th>
+                    <th class="p-3">Code Head</th>
+                    <th class="p-3">Rev/Cap</th>
+                    <th class="p-3">Amount</th>
+                    <th class="p-3">U.O. No.</th>
+                    <th class="p-3">U.O. Date</th>
+                    <th class="p-3">Amendment(if any)</th>
+                    <th class="p-3">Actions</th>
+                    <th class="p-3">Arrange</th>
+                  </tr>
+                </thead>
+                <tbody id="training-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Modal -->
+    <div id="dashboard-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-7xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
+          <button id="close-dashboard" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+
+        <!-- Dashboard Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+          <nav class="flex space-x-8">
+            <button id="overview-tab" class="py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium">Overview</button>
+            <button id="reports-tab" class="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Reports</button>
+            <button id="comparison-tab" class="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Year Comparison</button>
+            <button id="visualization-tab" class="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Advanced Charts</button>
+          </nav>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview-content" class="dashboard-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-blue-100 p-4 rounded-lg">
+              <h3 class="text-lg font-semibold text-blue-800">Total Supply Orders</h3>
+              <p id="total-supply" class="text-2xl font-bold text-blue-600">-</p>
+            </div>
+            <div class="bg-green-100 p-4 rounded-lg">
+              <h3 class="text-lg font-semibold text-green-800">Delivered Orders</h3>
+              <p id="delivered-orders" class="text-2xl font-bold text-green-600">-</p>
+            </div>
+            <div class="bg-yellow-100 p-4 rounded-lg">
+              <h3 class="text-lg font-semibold text-yellow-800">Pending Orders</h3>
+              <p id="pending-orders" class="text-2xl font-bold text-yellow-600">-</p>
+            </div>
+            <div class="bg-purple-100 p-4 rounded-lg">
+              <h3 class="text-lg font-semibold text-purple-800">Total Value</h3>
+              <p id="total-value" class="text-2xl font-bold text-purple-600">-</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-4 border rounded-lg">
+              <h3 class="text-lg font-semibold mb-4">Delivery Status Distribution</h3>
+              <div class="w-full aspect-square">
+                <canvas id="deliveryChart"></canvas>
+              </div>
+            </div>
+            <div class="bg-white p-4 border rounded-lg">
+              <h3 class="text-lg font-semibold mb-4">Monthly Order Trends</h3>
+              <div class="w-full aspect-square">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports-content" class="dashboard-content hidden">
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">Generate Reports</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <select id="report-type" class="p-2 border rounded-lg">
+                <option value="supply">Supply Orders</option>
+                <option value="demand">Demand Orders</option>
+                <option value="bill">Bill Orders</option>
+                <option value="all">All Orders</option>
+              </select>
+              <select id="report-year" class="p-2 border rounded-lg">
+                <!-- Populated dynamically -->
+              </select>
+              <button id="generate-report" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Generate Report</button>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <button id="print-report" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 mr-2">Print Report</button>
+            <button id="download-pdf" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Download PDF</button>
+          </div>
+
+          <div id="report-content" class="bg-white border rounded-lg p-4">
+            <p class="text-gray-500">Select report type and year to generate report...</p>
+          </div>
+        </div>
+
+        <!-- Comparison Tab -->
+        <div id="comparison-content" class="dashboard-content hidden">
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">Financial Year Comparison</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <select id="compare-year1" class="p-2 border rounded-lg">
+                <!-- Populated dynamically -->
+              </select>
+              <select id="compare-year2" class="p-2 border rounded-lg">
+                <!-- Populated dynamically -->
+              </select>
+              <button id="compare-years" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Compare</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-4 border rounded-lg">
+              <h3 class="text-lg font-semibold mb-4">Order Volume Comparison</h3>
+              <div class="w-full aspect-square">
+                <canvas id="comparisonChart"></canvas>
+              </div>
+            </div>
+            <div class="bg-white p-4 border rounded-lg">
+              <h3 class="text-lg font-semibold mb-4">Value Comparison</h3>
+              <div class="w-full aspect-square">
+                <canvas id="valueComparisonChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualization Tab -->
+        <div id="visualization-content" class="dashboard-content hidden">
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">Advanced Data Visualization</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <select id="viz-type" class="p-2 border rounded-lg">
+                <option value="procurement">Procurement Mode Analysis</option>
+                <option value="firm">Top Firms by Order Value</option>
+                <option value="timeline">Delivery Timeline Analysis</option>
+                <option value="expenditure">Expenditure Head Distribution</option>
+              </select>
+              <button id="update-visualization" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Update Chart</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-6">
+            <div class="bg-white p-4 border rounded-lg">
+              <h3 id="viz-title" class="text-lg font-semibold mb-4">Procurement Mode Analysis</h3>
+              <div class="w-full aspect-square max-w-2xl mx-auto">
+                <canvas id="advancedChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
